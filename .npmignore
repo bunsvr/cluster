@@ -1,0 +1,15 @@
+# Git
+.gitignore
+
+# Packages
+node_modules
+bun.lockb
+
+# Development
+src
+assets
+tsconfig.json
+typedoc.json
+
+# README (go to repo to read)
+README.md
