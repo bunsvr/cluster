@@ -1,5 +1,8 @@
 import { SpawnOptions, env, spawn } from "bun";
 
+/**
+ * Spawn options with additional server options
+ */
 export interface Process extends SpawnOptions.OptionsObject {
     url?: URL,
     port?: string | number,
@@ -8,6 +11,9 @@ export interface Process extends SpawnOptions.OptionsObject {
     protocol?: "http" | "https",
 }
 
+/**
+ * Clustering for Bun
+ */
 class Cluster {
     private readonly procs: Process[];
 
@@ -18,25 +24,26 @@ class Cluster {
     constructor(public readonly target: string) {
         this.procs = [];
     }
-    
+
     /**
      * Add processes
      * @param opts 
      */
     use(...opts: Process[]) {
         for (const v of opts) {
-            v.env ||= {}; 
-            v.env.NODE_ENV = env.NODE_ENV;
+            v.env ||= {};
+            Object.assign(v.env, env);
 
             if (v.url)
                 v.env.URI = v.url.toString();
+            else {
+                let url = (v.protocol || "http") + "://";
+                url += v.hostname || "localhost";
+                if (v.port)
+                    url += ":" + v.port;
 
-            let url = (v.protocol || "http") + "://";
-            url += v.hostname || "localhost";
-            if (v.port)
-                url += ":" + v.port;
-
-            v.env.URI = url;
+                v.env.URI = url;
+            }
             v.stdin = v.stdout = v.stderr = "inherit";
         }
 
@@ -48,16 +55,10 @@ class Cluster {
      * @returns Spawned processes 
      */
     fork() {
-        return this.procs.map(v => {
-            v.env ||= {}; 
-            v.env.NODE_ENV = env.NODE_ENV;
-
-            if (v.url)
-                v.env.URL = v.url.toString();
-
-            return spawn(["bun", this.target], v);
-        });
-    }   
+        return this.procs.map(v =>
+            spawn(["bun", this.target], v)
+        );
+    }
 }
 
 export { Cluster };
