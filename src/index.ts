@@ -1,64 +1,86 @@
-import { SpawnOptions, env, spawn } from "bun";
+import { Subprocess } from "bun";
+import { cpus } from "os";
 
 /**
- * Spawn options with additional server options
- */
-export interface Process extends SpawnOptions.OptionsObject {
-    url?: URL,
-    port?: string | number,
-    hostname?: string,
-    baseURI?: string,
-    protocol?: "http" | "https",
-}
-
-/**
- * Clustering for Bun
+ * Clustering for Bun. 
+ * Only works properly for an entry point.
  */
 class Cluster {
-    private readonly procs: Process[];
+    /**
+     * The target file. Defaults to the entry point or `process.argv[1]`.
+     */
+    static target = Bun.main;
 
     /**
-     * Create a cluster 
-     * @param target Target file
+     * Spawn new process
+     * @param env 
      */
-    constructor(public readonly target: string) {
-        this.procs = [];
+    static fork(env?: Bun.Env): Subprocess {
+        if (!this.isMain)
+            return;
+
+        // @ts-ignore
+        env ||= {};
+        Object.assign(env, Bun.env);
+        env.PROC_TYPE = "worker";
+    
+        return Bun.spawn([process.execPath, this.target], {
+            env,
+            cwd: process.cwd(),
+            stdin: "inherit",
+            stdout: "inherit",
+            stderr: "inherit"
+        });
     }
 
     /**
-     * Add processes
-     * @param opts 
+     * Spawn `cpus().length` processes
      */
-    use(...opts: Process[]) {
-        for (const v of opts) {
-            v.env ||= {};
-            Object.assign(v.env, env);
+    static spawn(): Subprocess[];
 
-            if (v.url)
-                v.env.URI = v.url.toString();
-            else {
-                let url = (v.protocol || "http") + "://";
-                url += v.hostname || "localhost";
-                if (v.port)
-                    url += ":" + v.port;
+    /**
+     * Spawn `cpus().length` processes with additional ENVs
+     */
+    static spawn(env: Bun.Env): Subprocess[];
 
-                v.env.URI = url;
-            }
-            v.stdin = v.stdout = v.stderr = "inherit";
-        }
+    /**
+     * Spawn `instances` processes
+     * @param instances number of processes to spawn
+     */
+    static spawn(instances: number): Subprocess[];
 
-        this.procs.push(...opts);
+    /**
+     * Spawn `instances` processes with additional ENVs
+     * @param instances number of processes to spawn
+     */
+    static spawn(instances: number, env: Bun.Env): Subprocess[];
+
+    /**
+     * Spawn new processes
+     * @param instances instances count
+     */
+    static spawn(...args: any[]): Subprocess[] {
+        if (!this.isMain)
+            return;
+
+        if (args.length === 0)
+            return this.spawn(cpus().length);
+
+        if (typeof args[0] === "object")
+            return this.spawn(cpus().length, args[0]);
+
+        const arr = [];
+
+        for (let i = 0; i < args[0]; ++i)
+            arr.push(this.fork(args[1]));
+
+        return arr;
     }
 
     /**
-     * Start the cluster
-     * @returns Spawned processes 
+     * If the process is the main process
      */
-    fork() {
-        return this.procs.map(v =>
-            spawn(["bun", this.target], v)
-        );
-    }
+    static readonly isMain = Bun.env.PROC_TYPE !== "worker";
 }
 
 export { Cluster };

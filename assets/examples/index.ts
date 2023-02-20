@@ -1,5 +1,6 @@
 import { Cluster } from "../..";
+import { App } from "@stricjs/core";
 
-const cluster = new Cluster(import.meta.dir + "/server.ts");
-cluster.use({ port: 3000 }, { port: 8080 });
-cluster.fork();
+// Spawn workers or serve an app
+export default Cluster.spawn() || new App()
+    .use(() => new Response("Hello"));
