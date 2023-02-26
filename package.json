@@ -1,6 +1,6 @@
 {
   "name": "@stricjs/cluster",
-  "version": "1.0.1-alpha",
+  "version": "1.0.1",
   "repository": {
     "url": "https://github.com/bunsvr/cluster"
   },
