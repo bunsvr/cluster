@@ -1,0 +1,23 @@
+{
+  "name": "@stricjs/cluster",
+  "version": "1.0.6",
+  "repository": {
+    "url": "https://github.com/bunsvr/cluster"
+  },
+  "main": "index.js",
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^4.9.4",
+    "@stricjs/core": "^1.0.3"
+  },
+  "description": "A cluster implementation for Bun",
+  "scripts": {
+    "bench": "bombardier --fasthttp -c 500 -d 10s http://localhost:3000"
+  },
+  "type": "module",
+  "types": "types/index.d.ts",
+  "typedoc": {
+    "entryPoint": "./src/index.ts",
+    "displayName": "@stricjs/cluster"
+  }
+}
