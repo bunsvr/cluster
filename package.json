@@ -1,14 +1,13 @@
 {
   "name": "@stricjs/cluster",
-  "version": "1.0.6",
+  "version": "2.0.0",
   "repository": {
     "url": "https://github.com/bunsvr/cluster"
   },
   "main": "index.js",
   "devDependencies": {
-    "bun-types": "latest",
-    "typescript": "^4.9.4",
-    "@stricjs/core": "^1.0.3"
+    "bun-types": "^1.0.18",
+    "typescript": "^4.9.4"
   },
   "description": "A cluster implementation for Bun",
   "scripts": {

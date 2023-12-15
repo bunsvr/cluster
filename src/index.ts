@@ -1,5 +1,4 @@
 import { Subprocess } from 'bun';
-import { cpus } from 'os';
 
 declare global {
     namespace Bun {
@@ -22,6 +21,9 @@ declare global {
  */
 export const worker = 'WORKER' in Bun.env;
 export const target = Bun.main;
+export const cwd = process.cwd();
+
+const defaultENV = { NODE_ENV: Bun.env.NODE_ENV };
 
 /**
  * Spawn a new process with corresponding ENV
@@ -31,11 +33,11 @@ export const target = Bun.main;
 function fork(env?: Bun.Env): Subprocess | null {
     if (worker) return null;
 
-    env ||= { NODE_ENV: Bun.env.NODE_ENV };
+    env ||= defaultENV;
     env.WORKER = '';
 
     return Bun.spawn([process.execPath, 'run', target], {
-        env, cwd: process.cwd(),
+        env, cwd,
         stdin: 'inherit',
         stdout: 'inherit',
         stderr: 'inherit'
@@ -73,15 +75,18 @@ function spawn(...args: any[]) {
         return [];
 
     if (args.length === 0)
-        return spawn(cpus().length);
+        return spawn(navigator.hardwareConcurrency);
 
     if (typeof args[0] === 'object')
-        return spawn(cpus().length, args[0]);
+        return spawn(navigator.hardwareConcurrency, args[0]);
 
     const arr = new Array(args[0]);
 
-    for (let i = 0; i < args[0]; ++i)
+    let i = 0;
+    while (i < args[0]) {
         arr[i] = fork(args[1]);
+        ++i;
+    }
 
     return arr;
 }
